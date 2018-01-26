@@ -1,4 +1,3 @@
-
 #include <opencv2/opencv.hpp>
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
@@ -18,6 +17,7 @@ using namespace std;
 
 #define CAMERA 0
 
+bool Detected;
 bool mousePress;
 bool rectOK;
 Rect initRect;
@@ -28,7 +28,7 @@ void processVideo(Mat);
 void initializeVideo(Mat);
 void msrect(Mat);
 
-static void onMouse( int event, int x, int y, int, void* ){
+static void OnDetect( int event, std_msgs::Int64MultiArray vertex){
     if( event != EVENT_LBUTTONDOWN || rectOK)
         return;
 
@@ -45,10 +45,9 @@ static void onMouse( int event, int x, int y, int, void* ){
     }
 }
 void initializeVideo(Mat image) {
-  // interface
-  mousePress = false;
+  // Interface
+  Detected = false;
   rectOK = false;
-
 
   tracker.init("AKC");
 
@@ -56,17 +55,15 @@ void initializeVideo(Mat image) {
 
   bool run = 1;
 
-  //cv::VideoCapture cam(CAMERA);
+  // cv::VideoCapture cam(CAMERA);
 
   imshow("result", image);
-  setMouseCallback("result", onMouse,0);
+  setMouseCallback("result", OnDetect, 0);
 }
-void msrect(Mat image){
-
-
+void msrect(Mat image)
+{
       imshow("result", image);
       waitKey(100);
-
 
   while(!rectOK){
       waitKey(100);
@@ -83,14 +80,12 @@ void processVideo(Mat image){
             cout << "/* hmm kya hua run nahi hua kya */" << '\n';
       }
 
-      //Report result
+      // Report result
       Rect output = tracker.track(image);
       Mat saida = image.clone();
       rectangle(saida, output,Scalar(0,255,0), 2);
       imshow("result", saida);
       waitKey(1000);
-
-
 
   return ;
 }
@@ -100,39 +95,42 @@ void call(const sensor_msgs::ImageConstPtr& msg){
   ROS_INFO("IMAGE RECIEVED\n");
   cv_bridge::CvImagePtr cv_ptr;
 
-  //create Background Subtractor objects
-  //pMOG2 = createBackgroundSubtractorMOG2(); //MOG2 approach
+  // create Background Subtractor objects
+  // pMOG2 = createBackgroundSubtractorMOG2(); //MOG2 approach
 
   cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
   Mat img = cv_ptr->image;
-  //update the background model
+  // update the background model
 
-  if(start_track==0){
+  if(start_track==0)
+  {
     cout<<"get val"<<endl;
     cin>>start_track;
     cout <<"val = "<<start_track<<endl;
     imshow("hmm", img);
   }
-  if(start_track==1){
+
+  if(start_track==1)
+  {
 
     if (flag==1)
     {
       initializeVideo(img);
       flag++;
     }
-    while(!mousePress && flag !=1){
+    
+    while(!mousePress && flag !=1)
+    {  
       msrect(img);
-
     }
-    if (flag==5) {
+
+    if (flag==5) 
+    {
       /* code */
         processVideo(img);
     }
 
   }
-
-
-
   waitKey(10);
 
 }
@@ -140,22 +138,19 @@ void call(const sensor_msgs::ImageConstPtr& msg){
 
 int main(int argc, char** argv){
 
-    // interface
-    //integrating ros
-    flag =1;
-    start_track=0;
-    ros::init(argc, argv, "object_detect");
-    ros::NodeHandle nh;
-    image_transport::ImageTransport it(nh);
+  // Interface
+  // Integrating ROS
+  flag =1;
+  start_track=0;
+  ros::init(argc, argv, "object_detect");
+  ros::NodeHandle nh;
+  image_transport::ImageTransport it(nh);
 
+  ros::Rate loop_rate(10);
+  ros::Subscriber sub = nh.subscribe("state", 1, OnDetect);
+  image_transport::Subscriber image_sub_ = it.subscribe("/KrakenSimulator/front_camera/image_raw", 1, call);
 
-    ros::Rate loop_rate(10);
+  ros::spin();
 
-
-
-    image_transport::Subscriber image_sub_ = it.subscribe("/KrakenSimulator/front_camera/image_raw", 1, call);
-
-      ros::spin();
-
-    return 0;
+  return 0;
 }

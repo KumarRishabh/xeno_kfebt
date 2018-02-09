@@ -10,11 +10,11 @@ public:
     KFEBT();
     KFEBT(int nStates, int nMeasurements, int nInputs, double dt, cv::Rect initialState);
     void predict();
-    void correct(std::vector<float> measures, std::vector<float> Uncertainty);
+    void correct(   std::vector<float> measures, std::vector<float> Uncertainty);
+    void setProcessCov(float cov);
     std::vector<float> getFusion();
     cv::Rect getResult();
     std::vector<float> getPrediction();
-    void setProcessCov(float cov);
 
 private:
     cv::KalmanFilter KF;

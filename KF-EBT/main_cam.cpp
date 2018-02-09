@@ -28,8 +28,8 @@ void processVideo(Mat);
 void initializeVideo(Mat);
 void msrect(Mat);
 
-static void OnDetect( int event, std_msgs::Int64MultiArray vertex){
-    if( event != EVENT_LBUTTONDOWN || rectOK)
+static void OnDetect( const std_msgs::Int64MultiArray::ConstPtr& point){
+    /*if( event != EVENT_LBUTTONDOWN || rectOK)
         return;
 
     if(mousePress){
@@ -42,7 +42,11 @@ static void OnDetect( int event, std_msgs::Int64MultiArray vertex){
         initRect.x = x;
         initRect.y = y;
         mousePress = true;
-    }
+    }*/
+    initRect.x = point->data[0];
+    initRect.y = point->data[1];
+    initRect.width = point->data[0] - 2*point->data[2];
+    initRect.height = point->data[1] - 2*point->data[2];
 }
 void initializeVideo(Mat image) {
   // Interface
@@ -58,7 +62,7 @@ void initializeVideo(Mat image) {
   // cv::VideoCapture cam(CAMERA);
 
   imshow("result", image);
-  setMouseCallback("result", OnDetect, 0);
+  // setMouseCallback("result", OnDetect, 0);
 }
 void msrect(Mat image)
 {
@@ -91,7 +95,7 @@ void processVideo(Mat image){
 }
 
 void call(const sensor_msgs::ImageConstPtr& msg){
-
+while(ros::ok()){
   ROS_INFO("IMAGE RECIEVED\n");
   cv_bridge::CvImagePtr cv_ptr;
 
@@ -132,7 +136,7 @@ void call(const sensor_msgs::ImageConstPtr& msg){
 
   }
   waitKey(10);
-
+}
 }
 
 
@@ -142,13 +146,13 @@ int main(int argc, char** argv){
   // Integrating ROS
   flag =1;
   start_track=0;
-  ros::init(argc, argv, "object_detect");
+  ros::init(argc, argv, "object_track");
   ros::NodeHandle nh;
   image_transport::ImageTransport it(nh);
-
+  ros::Subscriber sub = nh.subscribe("measurement", 1, OnDetect);
   ros::Rate loop_rate(10);
-  ros::Subscriber sub = nh.subscribe("state", 1, OnDetect);
-  image_transport::Subscriber image_sub_ = it.subscribe("/KrakenSimulator/front_camera/image_raw", 1, call);
+  // ros::Subscriber sub = nh.subscribe("state", 1, OnDetect);
+  image_transport::Subscriber image_sub_ = it.subscribe("input", 1, call);
 
   ros::spin();
 

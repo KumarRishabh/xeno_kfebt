@@ -22,7 +22,8 @@ bool mousePress;
 bool rectOK;
 Rect initRect;
 KFebTracker tracker;
-int flag;
+int flag=0;
+int flag_s=0;
 int start_track;
 void processVideo(Mat);
 void initializeVideo(Mat);
@@ -43,38 +44,50 @@ static void OnDetect( const std_msgs::Int64MultiArray::ConstPtr& point){
         initRect.y = y;
         mousePress = true;
     }*/
+
     initRect.x = point->data[0];
     initRect.y = point->data[1];
-    initRect.width = point->data[0] - 2*point->data[2];
-    initRect.height = point->data[1] - 2*point->data[2];
+    initRect.width = 2*point->data[2];
+    initRect.height = 2*point->data[2];
+    cout << initRect.x<<"Y" << " " << endl;
+  cout << initRect.y<<"YY" << " " << endl;
+  cout << initRect.width<<"Y" << " " << endl;
+  cout << initRect.height<<"Y" << " " << endl;
+    flag = 1;
+    flag_s=1;
+    cout<<flag<<"  "<<endl;
+    cout<<flag_s<<"  gfusgug"<<endl;
 }
 void initializeVideo(Mat image) {
   // Interface
-  Detected = false;
-  rectOK = false;
-
+  
+  
+  cout << "Init" << endl;
   tracker.init("AKC");
-
-  Rect region;
-
-  bool run = 1;
 
   // cv::VideoCapture cam(CAMERA);
 
-  imshow("result", image);
+  // imshow("result", image);
+  // waitKey(100);
+  cout << initRect.x<<"x" << " " << endl;
+  cout << initRect.y<<"x" << " " << endl;
+  cout << initRect.width<<"x" << " " << endl;
+  cout << initRect.height<<"x" << " " << endl;
+  tracker.initTrackers(image, initRect);
+  flag=5; 
+  cout << flag << " " << endl; 
   // setMouseCallback("result", OnDetect, 0);
 }
 void msrect(Mat image)
 {
       imshow("result", image);
-      waitKey(100);
+      
 
   while(!rectOK){
       waitKey(100);
   }
 
-  tracker.initTrackers(image, initRect);
-  flag=5;
+  
 }
 
 void processVideo(Mat image){
@@ -105,7 +118,7 @@ while(ros::ok()){
   cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
   Mat img = cv_ptr->image;
   // update the background model
-
+/*
   if(start_track==0)
   {
     cout<<"get val"<<endl;
@@ -114,20 +127,21 @@ while(ros::ok()){
     imshow("hmm", img);
   }
 
-  if(start_track==1)
-  {
-
+  */
+    cout<<"  flaf"<<flag<<endl;
     if (flag==1)
     {
+
       initializeVideo(img);
-      flag++;
+      cout << "Initialized " << endl;
+      cout << flag << endl ;
     }
-    
+    /*
     while(!mousePress && flag !=1)
     {  
       msrect(img);
     }
-
+*/
     if (flag==5) 
     {
       /* code */
@@ -137,7 +151,8 @@ while(ros::ok()){
   }
   waitKey(10);
 }
-}
+
+
 
 
 int main(int argc, char** argv){
@@ -150,10 +165,15 @@ int main(int argc, char** argv){
   ros::NodeHandle nh;
   image_transport::ImageTransport it(nh);
   ros::Subscriber sub = nh.subscribe("measurement", 1, OnDetect);
-  ros::Rate loop_rate(10);
+  
   // ros::Subscriber sub = nh.subscribe("state", 1, OnDetect);
-  image_transport::Subscriber image_sub_ = it.subscribe("input", 1, call);
-
+  cout<<flag_s<<"gus"<<endl;
+  if(flag_s==1) 
+  {
+    
+    image_transport::Subscriber image_sub_ = it.subscribe("input", 1, call);
+  }
+ 
   ros::spin();
 
   return 0;
